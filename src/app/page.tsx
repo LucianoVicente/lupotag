@@ -4,21 +4,24 @@ import {
   ChevronRight, Plus, QrCode, Heart,
 } from "lucide-react";
 import Header from "@/components/Header";
+import { getAvisosRecientes } from "@/lib/actions";
 
-const perrosPerdidos = [
-  { id: 1, nombre: "Rocky",  raza: "Pastor Alemán",  edad: "3 años",  zona: "Málaga centro",   hace: "Hace 2 horas", estado: "perdido",    contacto: "612 345 678" },
-  { id: 2, nombre: "Bella",  raza: "Caniche blanco", edad: "5 años",  zona: "Fuengirola",      hace: "Hace 6 horas", estado: "perdido",    contacto: "698 765 432" },
-  { id: 3, nombre: "Max",    raza: "Labrador negro", edad: "2 años",  zona: "Torremolinos",    hace: "Hace 1 día",   estado: "encontrado", contacto: "655 111 222" },
-  { id: 4, nombre: "Luna",   raza: "Mezcla mediana", edad: "4 años",  zona: "Marbella",        hace: "Hace 2 días",  estado: "perdido",    contacto: "677 333 444" },
-];
-
+// Adopciones siguen siendo datos de ejemplo hasta conectar protectoras
 const perrosAdopcion = [
   { id: 1, nombre: "Tobi",  raza: "Mestizo",  edad: "2 años", protectora: "Protectora Sur Málaga", urgente: true  },
   { id: 2, nombre: "Nala",  raza: "Bichón",   edad: "4 años", protectora: "Adopta Málaga",         urgente: false },
   { id: 3, nombre: "Bruno", raza: "Labrador", edad: "1 año",  protectora: "Huellas Felices",       urgente: false },
 ];
 
-export default function HomePage() {
+function tiempoTranscurrido(fecha: Date) {
+  const minutos = Math.floor((Date.now() - fecha.getTime()) / 60000);
+  if (minutos < 60)   return `Hace ${minutos} min`;
+  if (minutos < 1440) return `Hace ${Math.floor(minutos / 60)}h`;
+  return `Hace ${Math.floor(minutos / 1440)}d`;
+}
+
+export default async function HomePage() {
+  const avisos = await getAvisosRecientes(4);
   return (
     <>
       {/* Barra de urgencia */}
@@ -117,55 +120,65 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {perrosPerdidos.map((perro) => (
-            <div
-              key={perro.id}
-              className="bg-blanco border border-gris-claro rounded-xl flex items-center gap-5 px-5 py-4 hover:border-gris transition-colors cursor-pointer"
-            >
+        {avisos.length === 0 ? (
+          <div className="text-center py-16 text-gris border border-dashed border-gris-claro rounded-2xl">
+            <p className="text-4xl mb-4">🐾</p>
+            <p className="font-medium mb-1">Aún no hay avisos publicados</p>
+            <p className="text-sm">Sé el primero en publicar uno</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {avisos.map((aviso) => (
               <div
-                className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center text-3xl"
-                style={{ background: "linear-gradient(135deg,#c8b89a,#a89070)" }}
+                key={aviso.id}
+                className="bg-blanco border border-gris-claro rounded-xl flex items-center gap-5 px-5 py-4 hover:border-gris transition-colors cursor-pointer"
               >
-                🐕
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold text-base">{perro.nombre}</span>
-                  <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      perro.estado === "perdido"
-                        ? "bg-red-50 text-rojo"
-                        : "bg-green-50 text-verde"
-                    }`}
-                  >
-                    {perro.estado === "perdido" ? "Perdido" : "Encontrado"}
-                  </span>
-                </div>
-                <div className="text-sm text-gris">{perro.raza} · {perro.edad}</div>
-                <div className="flex items-center gap-1 text-sm mt-0.5">
-                  <MapPin size={12} className="text-gris" />
-                  {perro.zona}
-                </div>
-              </div>
-
-              <div className="text-right shrink-0 hidden sm:flex flex-col items-end gap-2">
-                <div className="flex items-center gap-1 text-xs text-gris">
-                  <Clock size={11} />
-                  {perro.hace}
-                </div>
-                <a
-                  href={`tel:+34${perro.contacto.replace(/\s/g, "")}`}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-verde border border-verde px-3 py-1.5 rounded-lg hover:bg-verde hover:text-blanco transition-colors"
+                <div
+                  className="w-16 h-16 rounded-lg shrink-0 flex items-center justify-center text-3xl"
+                  style={{ background: "linear-gradient(135deg,#c8b89a,#a89070)" }}
                 >
-                  <Phone size={11} />
-                  Llamar
-                </a>
+                  🐕
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-bold text-base">{aviso.nombre}</span>
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        aviso.tipo === "perdido"
+                          ? "bg-red-50 text-rojo"
+                          : "bg-green-50 text-verde"
+                      }`}
+                    >
+                      {aviso.tipo === "perdido" ? "Perdido" : "Encontrado"}
+                    </span>
+                  </div>
+                  {aviso.descripcion && (
+                    <div className="text-sm text-gris truncate">{aviso.descripcion}</div>
+                  )}
+                  <div className="flex items-center gap-1 text-sm mt-0.5">
+                    <MapPin size={12} className="text-gris" />
+                    {aviso.zona}
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0 hidden sm:flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-1 text-xs text-gris">
+                    <Clock size={11} />
+                    {tiempoTranscurrido(aviso.createdAt)}
+                  </div>
+                  <a
+                    href={`tel:${aviso.contactoTel.replace(/\s/g, "")}`}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-verde border border-verde px-3 py-1.5 rounded-lg hover:bg-verde hover:text-blanco transition-colors"
+                  >
+                    <Phone size={11} />
+                    Llamar
+                  </a>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="mt-6 border-2 border-dashed border-gris-claro rounded-xl p-6 text-center">
           <p className="text-gris text-sm mb-3">¿Tu perro no está aquí?</p>
