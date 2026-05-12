@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Un "Aviso" es un perro perdido o encontrado publicado en la plataforma
+model Aviso {
+  id             String   @id @default(cuid())  // ID único automático
+  tipo           String   // "perdido" o "encontrado"
+  nombre         String   // nombre del perro
+  raza           String?  // el ? significa que es opcional
+  edad           String?
+  sexo           String?
+  color          String?
+  descripcion    String?
+  zona           String
+  contactoNombre String
+  contactoTel    String
+  contactoEmail  String?
+  activo         Boolean  @default(true)   // false = aviso resuelto/cerrado
+  createdAt      DateTime @default(now())  // fecha automática al crear
+  updatedAt      DateTime @updatedAt       // fecha automática al modificar
+}
